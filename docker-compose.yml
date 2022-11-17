@@ -12,7 +12,7 @@ services:
     ports:
       - '8080:8080'
     volumes:
-      - ".:/JaneAusten.txt:rw"
+      - ".:/resources:rw"
   spark-worker-1:
     image: docker.io/bitnami/spark:3.3
     environment:
