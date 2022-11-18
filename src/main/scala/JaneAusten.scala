@@ -6,10 +6,10 @@ import org.apache.spark.rdd.RDD
 import scala.util.matching.Regex
 
 
-case class Jane()
+case class Jane(word: String) extends Serializable 
 
-object Jane {
-    System.setProperty("hadoop.home.dir", "c:\\winutils\\bin\\")
+object JaneAusten extends Serializable {
+    System.setProperty("hadoop.home.dir", "C:\\winutils\\bin\\")
     private val conf: SparkConf = new SparkConf()
         .setMaster("spark://127.0.0.1:7077")
         .setAppName("word count")
@@ -18,19 +18,13 @@ object Jane {
     val ss: SparkSession = SparkSession
         .builder()
         .config(conf)
-        .config("spark.jars", "target/scala-2.12/word-count_2.12-1.0.jar")
+        // .config("spark.jars", "target/scala-2.12/word-count_2.12-1.0.jar")
         .getOrCreate()
     val sc: SparkContext = ss.sparkContext
     val sqlContext: SQLContext = ss.sqlContext
     import sqlContext.implicits._
 
-    val janeRdd: RDD[(Int, String)] = sc.textFile("resources/JaneAusten.txt")
-                                        .flatMap(_.split(" "))
-                                        .map(w => preprocess(w))
-                                        .map(w => (w, 1))
-                                        .reduceByKey(_ + _)
-                                        .map(p => (p._2, p._1))
-                                        .sortByKey(false)
+    val janeRdd: RDD[String] = sc.textFile("resources/JaneAusten.txt")
 
     def preprocess(word: String): String = {
         val pattern = new Regex("[^a-zA-Z0-9\\s]")
@@ -38,12 +32,15 @@ object Jane {
     }
 
     def count_words = {
-        janeRdd.toDF().show()
+        janeRdd.flatMap(line => line.split(" "))
+                .map(w => preprocess(w))
+                .map(w => Jane(w))
+                .toDF().groupBy("word").count()
     }
 }
 
 object Main {
     def main(args: Array[String]): Unit = {
-        println(Jane.count_words)
+        println(JaneAusten.count_words.show())
     }
 }
