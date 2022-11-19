@@ -1,4 +1,4 @@
-package word_count
+package SparkScala
 
 import org.apache.spark.sql.{SQLContext, DataFrame}
 import scala.util.matching.Regex
@@ -10,7 +10,7 @@ case class Jane(word: String)
 
 object JaneAusten {
     lazy val stopWords: Array[String] = StopWordsRemover.loadDefaultStopWords("english")
-    lazy val janeText: DataFrame      = SparkClient.spark.read.text("resources/JaneAusten.txt")
+    lazy val janeText: DataFrame      = SparkClient.spark.read.text("resources/word-count/JaneAusten.txt")
     lazy val pattern: Regex           = new Regex("[^a-zA-Z0-9]")
     
     def notPunctuation(word: String): Array[String] = {
