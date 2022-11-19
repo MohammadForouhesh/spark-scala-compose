@@ -2,45 +2,59 @@ package word_count
 
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{SparkSession, SQLContext, DataFrame}
-import org.apache.spark.rdd.RDD
 import scala.util.matching.Regex
+import org.apache.log4j.{Logger, Level}
+import org.apache.spark.sql.functions.desc
+import org.apache.spark.ml.feature.StopWordsRemover
 
 
-case class Jane(word: String) extends Serializable 
+case class Jane(word: String)
 
-object JaneAusten extends Serializable {
-    System.setProperty("hadoop.home.dir", "C:\\winutils\\bin\\")
+object Spark {
+    Logger.getLogger("org.apache.spark").setLevel(Level.ERROR)
+    System.setProperty("hadoop.home.dir", "C:\\hadoop\\")
     private val conf: SparkConf = new SparkConf()
-        .setMaster("spark://127.0.0.1:7077")
+        .setMaster("local[2]")
         .setAppName("word count")
         .set("spark.driver.allowMultipleContexts", "false")
 
-    val ss: SparkSession = SparkSession
+    val spark: SparkSession = SparkSession
         .builder()
         .config(conf)
-        // .config("spark.jars", "target/scala-2.12/word-count_2.12-1.0.jar")
         .getOrCreate()
-    val sc: SparkContext = ss.sparkContext
-    val sqlContext: SQLContext = ss.sqlContext
+    val sqlContext: SQLContext = spark.sqlContext
     import sqlContext.implicits._
+}
 
-    val janeRdd: RDD[String] = sc.textFile("resources/JaneAusten.txt")
-
-    def preprocess(word: String): String = {
-        val pattern = new Regex("[^a-zA-Z0-9\\s]")
+object JaneAusten {
+    lazy val stopWords = StopWordsRemover.loadDefaultStopWords("english")
+    
+    def notPunctuation(word: String): String = {
+        lazy val pattern = new Regex("[^a-zA-Z0-9\\s]")
         (pattern.replaceAllIn(word, " ")).mkString("")
     }
 
+    def notStopWord(word: String): String = {
+        if (stopWords.contains(word)) "" else word
+    }
+
     def count_words = {
-        janeRdd.flatMap(line => line.split(" "))
-                .map(w => preprocess(w))
+        val sqlContext: SQLContext = Spark.spark.sqlContext
+        import sqlContext.implicits._
+        Spark.spark.read.text("resources/JaneAusten.txt")
+                .flatMap(_.toString.split(" "))
+                .map(w => notPunctuation(w))
+                // .map(w => notStopWord(w))
+                .map(_.trim)
+                .filter(!_.isEmpty())
                 .map(w => Jane(w))
-                .toDF().groupBy("word").count()
+                .groupBy("word").count().sort(desc("count"))
     }
 }
 
 object Main {
     def main(args: Array[String]): Unit = {
-        println(JaneAusten.count_words.show())
+        JaneAusten.count_words.show()
+        Spark.spark.close()
     }
 }
