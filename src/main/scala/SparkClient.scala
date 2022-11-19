@@ -9,7 +9,7 @@ object SparkClient {
     Logger.getLogger("org.apache.spark").setLevel(Level.ERROR)
     System.setProperty("hadoop.home.dir", "C:\\hadoop\\")
     private val conf: SparkConf = new SparkConf()
-        .setMaster("local[2]")
+        .setMaster("local[*]")
         .setAppName("word count")
         .set("spark.driver.allowMultipleContexts", "false")
 
