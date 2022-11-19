@@ -29,9 +29,9 @@ object Spark {
 object JaneAusten {
     lazy val stopWords = StopWordsRemover.loadDefaultStopWords("english")
     
-    def notPunctuation(word: String): String = {
-        lazy val pattern = new Regex("[^a-zA-Z0-9\\s]")
-        (pattern.replaceAllIn(word, " ")).mkString("")
+    def notPunctuation(word: String): Array[String] = {
+        lazy val pattern = new Regex("[^a-zA-Z0-9]")
+        (pattern.replaceAllIn(word, ",")).mkString("").split(",")
     }
 
     def notStopWord(word: String): String = {
@@ -43,11 +43,12 @@ object JaneAusten {
         import sqlContext.implicits._
         Spark.spark.read.text("resources/JaneAusten.txt")
                 .flatMap(_.toString.split(" "))
-                .map(w => notPunctuation(w))
-                // .map(w => notStopWord(w))
+                .flatMap(notPunctuation)
+                .map(_.toLowerCase)
+                .map(notStopWord)
                 .map(_.trim)
-                .filter(!_.isEmpty())
-                .map(w => Jane(w))
+                .filter(!_.isEmpty)
+                .map(Jane)
                 .groupBy("word").count().sort(desc("count"))
     }
 }
