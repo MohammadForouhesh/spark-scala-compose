@@ -1,4 +1,4 @@
-package word_count
+package SparkScala
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{SparkSession, SQLContext}
@@ -10,7 +10,7 @@ object SparkClient {
     System.setProperty("hadoop.home.dir", "C:\\hadoop\\")
     private val conf: SparkConf = new SparkConf()
         .setMaster("local[*]")
-        .setAppName("word count")
+        .setAppName("spark-scala")
         .set("spark.driver.allowMultipleContexts", "false")
 
     val spark: SparkSession = SparkSession
