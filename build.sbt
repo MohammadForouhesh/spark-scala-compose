@@ -1,4 +1,4 @@
-name := "word count"
+name := "Spark Scala"
 version := "1.0"
 scalaVersion := "2.12.15"
 libraryDependencies ++= Seq(
