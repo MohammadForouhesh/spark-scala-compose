@@ -9,8 +9,9 @@ import org.apache.spark.ml.feature.StopWordsRemover
 case class Jane(word: String)
 
 object JaneAusten {
-    lazy val stopWords = StopWordsRemover.loadDefaultStopWords("english")
-    lazy val pattern = new Regex("[^a-zA-Z0-9]")
+    lazy val stopWords: Array[String] = StopWordsRemover.loadDefaultStopWords("english")
+    lazy val janeText: DataFrame      = SparkClient.spark.read.text("resources/JaneAusten.txt")
+    lazy val pattern: Regex           = new Regex("[^a-zA-Z0-9]")
     
     def notPunctuation(word: String): Array[String] = {
         (pattern.replaceAllIn(word, ",")).mkString("").split(",")
@@ -20,11 +21,10 @@ object JaneAusten {
         if (stopWords.contains(word)) "" else word
     }
 
-    def count_words = {
+    def count_words: DataFrame = {
         val sqlContext: SQLContext = SparkClient.spark.sqlContext
         import sqlContext.implicits._
-        SparkClient.spark.read.text("resources/JaneAusten.txt")
-                .flatMap(_.toString.split(" "))
+        janeText.flatMap(_.toString.split(" "))
                 .flatMap(notPunctuation)
                 .map(_.toLowerCase)
                 .map(notStopWord)
