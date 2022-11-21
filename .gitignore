@@ -5,3 +5,6 @@
 .bloop
 project/
 target/
+*.crc
+*\_SUCCESS
+*/_SUCCESS
