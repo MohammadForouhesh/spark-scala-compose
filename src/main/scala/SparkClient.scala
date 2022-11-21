@@ -1,6 +1,6 @@
 package SparkScala
 
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{SparkSession, SQLContext}
 import org.apache.log4j.{Logger, Level}
 
@@ -17,6 +17,7 @@ object SparkClient {
         .builder()
         .config(conf)
         .getOrCreate()
+
+    val sc: SparkContext = spark.sparkContext
     val sqlContext: SQLContext = spark.sqlContext
-    import sqlContext.implicits._
 }
