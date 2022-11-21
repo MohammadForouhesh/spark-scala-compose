@@ -34,10 +34,3 @@ object JaneAusten {
                 .groupBy("word").count().sort(desc("count"))
     }
 }
-
-object Main {
-    def main(args: Array[String]): Unit = {
-        JaneAusten.count_words.show()
-        SparkClient.spark.close()
-    }
-}
