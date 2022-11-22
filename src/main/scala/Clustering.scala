@@ -32,7 +32,7 @@ object Clustering {
 
     def optimizeKMeans(testCaseNum: Int, start: Int, end: Int) = {
         def gridSearchKMeans: Seq[Double] = 
-            (start to end).map(KMeans.train(infoSeq(testCaseNum - 1), _, numIterations).computeCost(infoSeq(testCaseNum)))
+            (start to end).map(KMeans.train(infoSeq(testCaseNum - 1), _, numIterations).computeCost(infoSeq(testCaseNum - 1)))
         
         def elbowSearchKMeans(gridPoints: Seq[Double]): Int = {
             val slope = (gridPoints.last - gridPoints.head)/(end - start)
