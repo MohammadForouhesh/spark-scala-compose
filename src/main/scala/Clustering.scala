@@ -1,7 +1,7 @@
 package SparkScala
 
 import org.apache.spark.mllib.clustering.{KMeans, BisectingKMeans, BisectingKMeansModel}
-import org.apache.spark.sql.{SQLContext, DataFrame, Column}
+import org.apache.spark.sql.{SQLContext, DataFrame, Column, Row}
 import org.apache.spark.mllib.linalg.{Vectors, Vector}
 import scala.util.matching.Regex
 import org.apache.spark.sql.functions.monotonically_increasing_id
@@ -34,10 +34,18 @@ object Clustering {
         
         def elbowSearchKMeans(gridPoints: Seq[Double]): Int = {
             val slope = (gridPoints.last - gridPoints.head)/(end - start)
-            (start to end).map(_ * slope + (gridPoints(0) - (slope * start))).zipWithIndex.maxBy(x => x._1)._2
+            (start to end).map(_ * slope + (gridPoints(0) - (slope * start)))
+                            .zip(gridPoints)
+                            .map(p => p._1 - p._2)                            
+                            .zipWithIndex.maxBy(x => x._1)._2
         }
         
-        val elbowPoints = gridSearchKMeans
+        val pts: Seq[Double] = gridSearchKMeans
+        val optimK: Int      = elbowSearchKMeans(pts)
+        
+        (optimK, 
+        pts.toDF().withColumn("numClusters", monotonically_increasing_id + start),
+        Seq(KMeans.train(infoSeq(testCaseNum - 1), optimK, numIterations).clusterCenters.flatMap(p => p.toArray)).toDF())
     }
     
 
