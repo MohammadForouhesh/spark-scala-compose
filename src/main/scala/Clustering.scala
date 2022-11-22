@@ -1,21 +1,52 @@
 package SparkScala
 
-import org.apache.spark.mllib.clustering.{KMeans, BisectingKMeans}
-import org.apache.spark.sql.{SQLContext, Column}
-import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.mllib.clustering.{KMeans, BisectingKMeans, BisectingKMeansModel}
+import org.apache.spark.sql.{SQLContext, DataFrame, Column}
+import org.apache.spark.mllib.linalg.{Vectors, Vector}
+import scala.util.matching.Regex
 import org.apache.spark.sql.functions.monotonically_increasing_id
+import org.apache.spark.rdd.RDD
+import SparkClient.sqlContext.implicits._
+
 
 object Clustering {
     lazy val numIterations: Int = 100
-    import SparkClient.sqlContext.implicits._
-    def computeKMeans(path: String) = {
-        val data = SparkClient.sc.textFile(f"resources/clustering/$path.txt")
-                             .map(_.trim)
-                             .map(_.split("    "))
-                             .map(s => Vectors.dense(s.map(_.toDouble)))
-                             .cache()
+    lazy val numPattern: Regex  = new Regex("[^0-9.]")
+    lazy val infoSeq: Seq[RDD[Vector]] = (1 to 3).map(ind => preprocess(SparkClient.sc.textFile(pathGen(ind))).cache())
 
-        (2 to 25).map(KMeans.train(data, _, numIterations).computeCost(data))
+    def pathGen(testCaseNum: Int): String = f"resources/clustering/C$testCaseNum.txt"
+
+    def preprocess(resilientData: RDD[String]): RDD[Vector] = {
+        resilientData.map(_.trim)
+            .map(numericPreprocess)
+            .map(w => w.filter(_ != ' '))
+            .map(_.split(","))
+            .map(s => Vectors.dense(s.map(_.toDouble)))
+    }
+    
+    def numericPreprocess(word: String): String = {
+        numPattern.replaceFirstIn(word, ",").mkString("")
+    }
+
+    def optimizeKMeans(testCaseNum: Int, start: Int, end: Int) = {
+        def gridSearchKMeans: Seq[Double] = 
+            (start to end).map(KMeans.train(infoSeq(testCaseNum - 1), _, numIterations).computeCost(infoSeq(testCaseNum)))
+        
+        def elbowSearchKMeans(gridPoints: Seq[Double]): Int = {
+            val slope = (gridPoints.last - gridPoints.head)/(end - start)
+            (start to end).map(_ * slope + (gridPoints(0) - (slope * start))).zipWithIndex.maxBy(x => x._1)._2
+        }
+        
+        val elbowPoints = gridSearchKMeans
+    }
+    
+
+    def computeElboBisectingKMeans(testCaseNum: Int): DataFrame = {
+        def bkm(k: Int): BisectingKMeansModel = {
+            new BisectingKMeans().setK(k).run(infoSeq(testCaseNum))
+        }
+
+        (2 to 25).map(bkm(_).computeCost(infoSeq(testCaseNum)))
                 .toDF()
                 .withColumn("numClusters", monotonically_increasing_id + 2)
     }
