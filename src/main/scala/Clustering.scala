@@ -55,13 +55,30 @@ object Clustering {
     }
     
 
-    def computeElboBisectingKMeans(testCaseNum: Int): DataFrame = {
-        def bkm(k: Int): BisectingKMeansModel = {
-            new BisectingKMeans().setK(k).run(infoSeq(testCaseNum))
+    def optimizeBisectingKMeans(testCaseNum: Int, start: Int, end: Int) = {
+        def bkm(k: Int): BisectingKMeansModel = 
+            new BisectingKMeans().setK(k).run(infoSeq(testCaseNum - 1))
+        
+        def gridSearchBisKM: Seq[Double] = 
+            (start to end).map(bkm(_).computeCost(infoSeq(testCaseNum - 1)))
+        
+        def elbowSearchBisKM(gridPoints: Seq[Double]): Int = {
+            val slope = (gridPoints.last - gridPoints.head)/(end - start)
+            (start to end).map(_ * slope + (gridPoints(0) - (slope * start)))
+                            .zip(gridPoints)
+                            .map(p => p._1 - p._2)                            
+                            .zipWithIndex.maxBy(x => x._1)._2
         }
-
-        (2 to 25).map(bkm(_).computeCost(infoSeq(testCaseNum)))
-                .toDF()
-                .withColumn("numClusters", monotonically_increasing_id + 2)
+        
+        val pts: Seq[Double] = gridSearchBisKM
+        val optimK: Int      = elbowSearchBisKM(pts)
+        
+        (optimK, 
+        pts.toDF().withColumn("numClusters", monotonically_increasing_id + start),
+        bkm(optimK)
+            .clusterCenters.map(_.toArray)
+            .map({case Array(x, y) => Centroid(x, y)})
+            .toSeq
+            .toDF())
     }
 }

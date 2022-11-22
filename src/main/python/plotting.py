@@ -20,3 +20,6 @@ if __name__ == '__main__':
     plot_elbow("results/kmeans_cost_C1")
     plot_elbow("results/kmeans_cost_C2")
     plot_elbow("results/kmeans_cost_C3")
+    plot_elbow("results/bisecting_kmeans_cost_C1")
+    plot_elbow("results/bisecting_kmeans_cost_C2")
+    plot_elbow("results/bisecting_kmeans_cost_C3")

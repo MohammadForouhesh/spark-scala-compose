@@ -38,6 +38,19 @@ object Main {
                 .option("header", "true")
                 .csv(f"results/kmeans_centeriods_{$opt}k_C{$i}")
         }
+
+        for (i <- (1 to 3)) {
+            val (opt, pts, cents) = Clustering.optimizeBisectingKMeans(i, 2, 25)
+            pts.coalesce(1)
+                .write.format("com.databricks.spark.csv")
+                .option("header", "true")
+                .csv(f"results/bisecting_kmeans_cost_C$i")
+                
+            cents.coalesce(1)
+                .write.format("com.databricks.spark.csv")
+                .option("header", "true")
+                .csv(f"results/bisecting_kmeans_centeriods_{$opt}k_C{$i}")
+        }
         SparkClient.spark.close()
     }
 }
