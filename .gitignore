@@ -8,3 +8,4 @@ target/
 *.crc
 *\_SUCCESS
 */_SUCCESS
+*.csv
