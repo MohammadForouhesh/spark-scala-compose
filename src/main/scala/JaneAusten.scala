@@ -14,20 +14,27 @@ object JaneAusten {
     lazy val pattern: Regex           = new Regex("[^a-zA-Z]")
     
     def preprocessPunctuation(word: String): Array[String] = {
-        (pattern.replaceAllIn(word, ",")).mkString("").split(",")
+        pattern.replaceAllIn(word, ",").mkString("").split(",")
     }
 
     def preprocessStopWord(word: String): String = {
         if (stopWords.contains(word)) "" else word
     }
 
-    def countUnique: DataFrame = {
+    def countTotal: DataFrame = {
+        countWords(false)
+                .agg(Map("word" -> "count", "count" -> "sum"))
+                .withColumnRenamed("count(word)", "total_unique_words")
+                .withColumnRenamed("sum(count)", "num_total_words")
+    }
+
+    def countRareWords: DataFrame = {
         countWords(true).filter("count = 1")
     }
 
     def countWords(removeStopWords: Boolean): DataFrame = {
-        val sqlContext: SQLContext = SparkClient.spark.sqlContext
-        import sqlContext.implicits._
+        import SparkClient.sqlContext.implicits._
+
         janeText.flatMap(_.toString.split(" "))
                 .flatMap(preprocessPunctuation)
                 .map(_.toLowerCase)
