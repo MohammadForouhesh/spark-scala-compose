@@ -26,24 +26,18 @@ object Main {
                 .option("header", "true")
                 .csv(f"results/jane_austin_unique_words")
 
-        Clustering.computeKMeans(1)
-                .coalesce(1)
+        for (i <- (1 to 3)) {
+            val (opt, pts, cents) = Clustering.optimizeKMeans(i, 2, 25)
+            pts.coalesce(1)
                 .write.format("com.databricks.spark.csv")
                 .option("header", "true")
-                .csv(f"results/kmeans_cost_C1")
-        
-        Clustering.computeKMeans(2)
-                .coalesce(1)
+                .csv(f"results/kmeans_cost_C$i")
+                
+            cents.coalesce(1)
                 .write.format("com.databricks.spark.csv")
                 .option("header", "true")
-                .csv(f"results/kmeans_cost_C2")
-        
-        Clustering.computeKMeans(3)
-                .coalesce(1)
-                .write.format("com.databricks.spark.csv")
-                .option("header", "true")
-                .csv(f"results/kmeans_cost_C3")
-
+                .csv(f"results/kmeans_centeriods_{$opt}k_C{$i}")
+        }
         SparkClient.spark.close()
     }
 }
