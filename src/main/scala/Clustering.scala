@@ -9,6 +9,8 @@ import org.apache.spark.rdd.RDD
 import SparkClient.sqlContext.implicits._
 
 
+case class Centroid(x: Double, y: Double)
+
 object Clustering {
     lazy val numIterations: Int = 100
     lazy val numPattern: Regex  = new Regex("[^0-9.]")
@@ -45,7 +47,11 @@ object Clustering {
         
         (optimK, 
         pts.toDF().withColumn("numClusters", monotonically_increasing_id + start),
-        Seq(KMeans.train(infoSeq(testCaseNum - 1), optimK, numIterations).clusterCenters.flatMap(p => p.toArray)).toDF())
+        KMeans.train(infoSeq(testCaseNum - 1), optimK, numIterations)
+            .clusterCenters.map(_.toArray)
+            .map({case Array(x, y) => Centroid(x, y)})
+            .toSeq
+            .toDF())
     }
     
 
